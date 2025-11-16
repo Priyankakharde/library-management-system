@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            if (!Schema::hasColumn('users', 'role')) {
+                $table->string('role')->default('user')->after('password');
+            }
+            if (!Schema::hasColumn('users', 'avatar')) {
+                $table->string('avatar')->nullable()->after('role');
+            }
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            if (Schema::hasColumn('users', 'avatar')) $table->dropColumn('avatar');
+            // we do not drop role here if it existed previously (but if you want to drop):
+            if (Schema::hasColumn('users', 'role')) $table->dropColumn('role');
+        });
+    }
+};
