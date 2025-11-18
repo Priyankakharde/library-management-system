@@ -9,7 +9,7 @@ class AuthorController extends Controller
 {
     public function index()
     {
-        $authors = Author::orderBy('name')->paginate(12);
+        $authors = Author::orderBy('name')->paginate(20);
         return view('authors.index', compact('authors'));
     }
 
@@ -18,16 +18,11 @@ class AuthorController extends Controller
         return view('authors.create');
     }
 
-    public function store(Request $request)
+    public function store(Request $req)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'bio'  => 'nullable|string',
-            'email'=> 'nullable|email|unique:authors,email',
-        ]);
-
+        $data = $req->validate(['name'=>'required|string|max:255','bio'=>'nullable|string']);
         Author::create($data);
-        return redirect()->route('authors.index')->with('success','Author added.');
+        return redirect()->route('authors.index')->with('success','Author created.');
     }
 
     public function edit(Author $author)
@@ -35,14 +30,9 @@ class AuthorController extends Controller
         return view('authors.edit', compact('author'));
     }
 
-    public function update(Request $request, Author $author)
+    public function update(Request $req, Author $author)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'bio'  => 'nullable|string',
-            'email'=> 'nullable|email|unique:authors,email,'.$author->id,
-        ]);
-
+        $data = $req->validate(['name'=>'required|string|max:255','bio'=>'nullable|string']);
         $author->update($data);
         return redirect()->route('authors.index')->with('success','Author updated.');
     }

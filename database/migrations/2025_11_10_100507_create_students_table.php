@@ -4,23 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void
+class CreateStudentsTable extends Migration
+{
+    public function up()
     {
         Schema::create('students', function (Blueprint $table) {
             $table->id();
-            $table->string('student_id')->nullable()->unique();
             $table->string('name');
-            $table->string('email')->nullable()->unique();
-            $table->string('course')->nullable();
-            $table->string('branch')->nullable();
-            $table->string('phone')->nullable();
+            $table->string('email')->nullable()->unique()->nullable();
+            $table->string('roll_no')->nullable()->index();
+            $table->string('department')->nullable();
             $table->timestamps();
         });
     }
 
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('students');
     }
-};
+}

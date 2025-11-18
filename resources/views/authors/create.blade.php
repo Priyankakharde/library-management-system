@@ -1,34 +1,32 @@
 @extends('layouts.app')
-
-@section('title','Add Author')
-
+@section('title','Authors')
 @section('content')
-<div class="container" style="max-width:720px;">
-    <div class="card">
-        <div class="card-body">
-            <h4>Add Author</h4>
+<div class="d-flex justify-content-between mb-3">
+  <h3>Authors</h3>
+  <a href="{{ route('authors.create') }}" class="btn btn-primary">Add Author</a>
+</div>
 
-            <form method="POST" action="{{ route('authors.store') }}">
-                @csrf
-                <div class="mb-3">
-                    <label>Name</label>
-                    <input name="name" value="{{ old('name') }}" class="form-control" required>
-                </div>
+@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
 
-                <div class="mb-3">
-                    <label>Email</label>
-                    <input name="email" value="{{ old('email') }}" class="form-control">
-                </div>
-
-                <div class="mb-3">
-                    <label>Bio</label>
-                    <textarea name="bio" class="form-control">{{ old('bio') }}</textarea>
-                </div>
-
-                <button class="btn btn-success">Save</button>
-                <a href="{{ route('authors.index') }}" class="btn btn-outline-secondary">Cancel</a>
-            </form>
-        </div>
-    </div>
+<div class="card-pro p-3">
+  <table class="table table-dark table-striped">
+    <thead><tr><th>Name</th><th>Books</th><th></th></tr></thead>
+    <tbody>
+      @foreach($authors as $a)
+      <tr>
+        <td>{{ $a->name }}</td>
+        <td>{{ $a->books()->count() }}</td>
+        <td class="text-end">
+          <a href="{{ route('authors.edit', $a) }}" class="btn btn-sm btn-outline-light">Edit</a>
+          <form method="POST" action="{{ route('authors.destroy', $a) }}" style="display:inline-block" onsubmit="return confirm('Delete author?');">
+            @csrf @method('DELETE')
+            <button class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      @endforeach
+    </tbody>
+  </table>
+  <div class="mt-3">{{ $authors->links() }}</div>
 </div>
 @endsection

@@ -2,42 +2,37 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Book extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'title',
-        'author',       // legacy text
-        'published_at',
         'isbn',
+        'published_at',
         'quantity',
-        'publisher',
-        'edition',
-        'pages',
-        'language',
-        'genre',
-        'location',
-        'description',
-        'cover_image',
+        'cover_path',
+        // add other fillable columns you use
     ];
 
-    protected $dates = ['published_at'];
+    /**
+     * Cast date fields so they become Carbon instances.
+     */
+    protected $casts = [
+        'published_at' => 'date', // -> Carbon instance when accessed
+        // 'created_at' and 'updated_at' are cast automatically by Eloquent
+    ];
 
-    public function authors(): BelongsToMany
+    /**
+     * Relationship: book has many authors (many-to-many)
+     */
+    public function authors()
     {
-        return $this->belongsToMany(Author::class)->withTimestamps();
+        return $this->belongsToMany(Author::class);
     }
 
-    public function getAuthorNamesAttribute()
-    {
-        return $this->authors->pluck('name')->implode(', ');
-    }
-
-    // optional helper to get cover url
-    public function getCoverUrlAttribute()
-    {
-        return $this->cover_image ? asset('storage/' . $this->cover_image) : null;
-    }
+    // other relationships...
 }

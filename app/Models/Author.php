@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Author extends Model
 {
-    protected $fillable = ['name','bio','email'];
+    use HasFactory;
 
-    public function books(): BelongsToMany
+    protected $fillable = [
+        'name',
+    ];
+
+    public function books()
     {
-        return $this->belongsToMany(Book::class)->withTimestamps();
+        return $this->belongsToMany(Book::class, 'author_book');
     }
 }
-

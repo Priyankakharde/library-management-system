@@ -2,69 +2,104 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Log;
 use App\Models\Book;
-use App\Models\Author;
+use App\Models\Student;
 use App\Models\Issue;
+use App\Models\Author;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        try {
-            // count books if table exists
-            $totalBooks = Schema::hasTable('books') ? Book::count() : 0;
+        // Basic stats
+        $totalBooks = Book::count();
+        $totalStudents = Student::count();
+        $issuedCount = Issue::whereNull('returned_at')->count();
+        $overdueCount = Issue::whereNull('returned_at')
+            ->whereDate('due_date', '<', Carbon::today())
+            ->count();
 
-            // safe students count: only try if Student model exists AND table exists
-            $totalStudents = 0;
-            if (class_exists(\App\Models\Student::class) && Schema::hasTable('students')) {
-                $totalStudents = \App\Models\Student::count();
+        // Recently added books
+        $recentBooks = Book::with('authors')
+            ->orderBy('created_at', 'desc')
+            ->limit(6)
+            ->get();
+
+        // Most borrowed books (top 6)
+        $mostBorrowedRaw = Issue::select('book_id', DB::raw('count(*) as borrow_count'))
+            ->groupBy('book_id')
+            ->orderByDesc('borrow_count')
+            ->limit(6)
+            ->get();
+
+        $mostBorrowedBooks = collect();
+        if ($mostBorrowedRaw->isNotEmpty()) {
+            $bookIds = $mostBorrowedRaw->pluck('book_id')->toArray();
+            $books = Book::with('authors')->whereIn('id', $bookIds)->get()->keyBy('id');
+
+            foreach ($mostBorrowedRaw as $row) {
+                if (isset($books[$row->book_id])) {
+                    $b = $books[$row->book_id];
+                    $b->borrow_count = (int) $row->borrow_count;
+                    $mostBorrowedBooks->push($b);
+                }
             }
-
-            // issued books and overdue
-            $issuedBooks = Schema::hasTable('issues') ? Issue::whereNull('returned_at')->count() : 0;
-
-            $overdueBooks = 0;
-            if (Schema::hasTable('issues')) {
-                $overdueBooks = Issue::whereNull('returned_at')
-                    ->whereDate('due_date', '<', now()->toDateString())
-                    ->count();
-            }
-
-            // authors + counts (safe)
-            $authors = [];
-            $booksCount = [];
-            if (class_exists(Author::class) && Schema::hasTable('authors')) {
-                $authorsWithCount = Author::withCount('books')->orderBy('books_count', 'desc')->get();
-                $top = $authorsWithCount->take(15);
-                $authors = $top->pluck('name')->map(function ($name) {
-                    return strlen($name) > 40 ? substr($name, 0, 37) . '...' : $name;
-                })->toArray();
-                $booksCount = $top->pluck('books_count')->toArray();
-            }
-
-            return view('dashboard', compact(
-                'totalBooks',
-                'totalStudents',
-                'issuedBooks',
-                'overdueBooks',
-                'authors',
-                'booksCount'
-            ));
-        } catch (\Throwable $e) {
-            // log and return minimal view so user doesn't see blank page
-            Log::error('Dashboard render error: '.$e->getMessage());
-            // fallback minimal data
-            return view('dashboard', [
-                'totalBooks' => 0,
-                'totalStudents' => 0,
-                'issuedBooks' => 0,
-                'overdueBooks' => 0,
-                'authors' => [],
-                'booksCount' => []
-            ]);
+            $mostBorrowedBooks = $mostBorrowedBooks->sortByDesc('borrow_count')->values();
         }
+
+        // --- Issue/Return trend (30 days) ---
+        $days = 30;
+        $start = Carbon::today()->subDays($days - 1); // inclusive
+        $labels = [];
+        $issuesSeries = [];
+        $returnsSeries = [];
+
+        // Get counts grouped by date. Use date(created_at) which works on MySQL & Postgres.
+        $issueCountsRaw = Issue::select(DB::raw("date(created_at) as dt"), DB::raw('count(*) as cnt'))
+            ->whereDate('created_at', '>=', $start)
+            ->groupBy('dt')
+            ->get()
+            ->pluck('cnt', 'dt')
+            ->toArray();
+
+        $returnCountsRaw = Issue::select(DB::raw("date(returned_at) as dt"), DB::raw('count(*) as cnt'))
+            ->whereNotNull('returned_at')
+            ->whereDate('returned_at', '>=', $start)
+            ->groupBy('dt')
+            ->get()
+            ->pluck('cnt', 'dt')
+            ->toArray();
+
+        for ($i = 0; $i < $days; $i++) {
+            $day = $start->copy()->addDays($i);
+            $key = $day->toDateString();
+            $labels[] = $day->format('M j'); // short label
+            $issuesSeries[] = isset($issueCountsRaw[$key]) ? (int)$issueCountsRaw[$key] : 0;
+            $returnsSeries[] = isset($returnCountsRaw[$key]) ? (int)$returnCountsRaw[$key] : 0;
+        }
+
+        // Authors chart data (books per author)
+        $authorsChart = Author::select('name', DB::raw('count(author_book.book_id) as books_count'))
+            ->leftJoin('author_book', 'authors.id', '=', 'author_book.author_id')
+            ->groupBy('authors.id', 'authors.name')
+            ->orderByDesc('books_count')
+            ->limit(10)
+            ->get();
+
+        return view('dashboard.index', compact(
+            'totalBooks',
+            'totalStudents',
+            'issuedCount',
+            'overdueCount',
+            'recentBooks',
+            'mostBorrowedBooks',
+            'labels',
+            'issuesSeries',
+            'returnsSeries',
+            'authorsChart'
+        ));
     }
 }

@@ -1,39 +1,49 @@
-@extends('layouts.lms')
+@extends('layouts.app')
 
 @section('title', 'Add Student')
 
-@section('lms-content')
+@section('content')
+<div class="container py-4">
+    <h2 class="fw-semibold mb-4">Add Student</h2>
 
-<h2>➕ Add New Student</h2>
+    <div class="card shadow-sm">
+        <div class="card-body">
 
-<form action="{{ route('students.store') }}" method="POST" enctype="multipart/form-data" class="card">
-    @csrf
+            @if($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach($errors->all() as $err)
+                            <li>{{ $err }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-    <label>Student ID (optional)</label>
-    <input type="text" name="student_code" value="{{ old('student_code') }}" placeholder="e.g. S1234">
+            <form action="{{ route('students.store') }}" method="POST">
+                @csrf
 
-    <label>Name</label>
-    <input type="text" name="name" value="{{ old('name') }}" required>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Name</label>
+                    <input name="name" value="{{ old('name') }}" class="form-control" required>
+                </div>
 
-    <label>Email</label>
-    <input type="email" name="email" value="{{ old('email') }}">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Email (optional)</label>
+                    <input name="email" value="{{ old('email') }}" type="email" class="form-control">
+                </div>
 
-    <label>Phone</label>
-    <input type="text" name="phone" value="{{ old('phone') }}">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Roll No (optional)</label>
+                    <input name="roll_no" value="{{ old('roll_no') }}" class="form-control">
+                </div>
 
-    <label>Course</label>
-    <input type="text" name="course" value="{{ old('course') }}">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary">Save</button>
+                    <a href="{{ route('students.index') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
 
-    <label>Branch</label>
-    <input type="text" name="branch" value="{{ old('branch') }}">
-
-    <label>Photo</label>
-    <input type="file" name="photo" accept="image/*">
-
-    <div style="margin-top:12px;">
-        <button class="btn-primary">Save Student</button>
-        <a class="btn" href="{{ route('students.index') }}">Cancel</a>
+        </div>
     </div>
-</form>
-
+</div>
 @endsection

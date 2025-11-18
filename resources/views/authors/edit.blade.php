@@ -1,37 +1,32 @@
-@extends('layouts.lms')
+@extends('layouts.app')
+@section('title','Authors')
+@section('content')
+<div class="d-flex justify-content-between mb-3">
+  <h3>Authors</h3>
+  <a href="{{ route('authors.create') }}" class="btn btn-primary">Add Author</a>
+</div>
 
-@section('title', 'Edit Author')
+@if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
 
-@section('lms-content')
-
-<h2>✏️ Edit Author</h2>
-
-<form action="{{ route('authors.update', $author->id) }}" method="POST" enctype="multipart/form-data">
-    @csrf
-    @method('PUT')
-
-    <label>Name</label>
-    <input type="text" name="name" value="{{ $author->name }}" required>
-
-    <label>Email</label>
-    <input type="email" name="email" value="{{ $author->email }}">
-
-    <label>Contact</label>
-    <input type="text" name="contact" value="{{ $author->contact }}">
-
-    <label>Address</label>
-    <textarea name="address">{{ $author->address }}</textarea>
-
-    <label>Bio</label>
-    <textarea name="bio">{{ $author->bio }}</textarea>
-
-    <label>Photo</label><br>
-    @if($author->photo)
-        <img src="{{ asset('storage/' . $author->photo) }}" class="thumb"><br>
-    @endif
-    <input type="file" name="photo">
-
-    <button class="btn-primary">Update</button>
-</form>
-
+<div class="card-pro p-3">
+  <table class="table table-dark table-striped">
+    <thead><tr><th>Name</th><th>Books</th><th></th></tr></thead>
+    <tbody>
+      @foreach($authors as $a)
+      <tr>
+        <td>{{ $a->name }}</td>
+        <td>{{ $a->books()->count() }}</td>
+        <td class="text-end">
+          <a href="{{ route('authors.edit', $a) }}" class="btn btn-sm btn-outline-light">Edit</a>
+          <form method="POST" action="{{ route('authors.destroy', $a) }}" style="display:inline-block" onsubmit="return confirm('Delete author?');">
+            @csrf @method('DELETE')
+            <button class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      @endforeach
+    </tbody>
+  </table>
+  <div class="mt-3">{{ $authors->links() }}</div>
+</div>
 @endsection

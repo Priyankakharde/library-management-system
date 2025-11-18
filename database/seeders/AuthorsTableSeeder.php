@@ -7,23 +7,18 @@ use App\Models\Author;
 
 class AuthorsTableSeeder extends Seeder
 {
-    public function run(): void
+    public function run()
     {
-        $names = [
-            'Charles Dickens',
-            'Jane Austen',
-            'Mark Twain',
-            'George Orwell',
-            'F. Scott Fitzgerald',
-            'J. K. Rowling',
-            'Robert C. Martin',
-            'Martin Fowler',
-            'Andrew Hunt',
-            'David Thomas'
+        $list = [
+            'Charles Dickens','Jane Austen','Mark Twain','Robert C. Martin',
+            'Martin Fowler','George Orwell','Aldous Huxley','J.K. Rowling'
         ];
 
-        foreach ($names as $name) {
-            Author::firstOrCreate(['name' => $name], ['email' => null]);
+        foreach ($list as $name) {
+            Author::create(['name'=>$name]);
         }
+
+        // some extra random authors
+        Author::factory()->count(8)->create();
     }
 }
